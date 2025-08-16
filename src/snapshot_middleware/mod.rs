@@ -88,6 +88,9 @@ pub fn snapshot_from_vfs(
                         Middleware::ClientScript => {
                             snapshot_lua_init(context, vfs, &init_path, ScriptType::Client)
                         }
+                        Middleware::AuroraScript => {
+                            snapshot_lua_init(context, vfs, &init_path, ScriptType::Aurora)
+                        }
 
                         Middleware::Csv => snapshot_csv_init(context, vfs, &init_path),
 
@@ -108,7 +111,7 @@ pub fn snapshot_from_vfs(
         // TODO: Is this even necessary anymore?
         match file_name {
             "init.server.luau" | "init.server.lua" | "init.client.luau" | "init.client.lua"
-            | "init.luau" | "init.lua" | "init.csv" => return Ok(None),
+            | "init.luau" | "init.lua" | "init.csv" | "init.aurora.lua" | "init.aurora.luau" => return Ok(None),
             _ => {}
         }
 
@@ -162,6 +165,16 @@ fn get_init_path<P: AsRef<Path>>(vfs: &Vfs, dir: P) -> anyhow::Result<Option<Pat
         return Ok(Some(init_path));
     }
 
+    let init_path = path.join("init.aurora.luau");
+    if vfs.metadata(&init_path).with_not_found()?.is_some() {
+        return Ok(Some(init_path));
+    }
+
+    let init_path = path.join("init.aurora.lua");
+    if vfs.metadata(&init_path).with_not_found()?.is_some() {
+        return Ok(Some(init_path));
+    }
+
     Ok(None)
 }
 
@@ -209,6 +222,7 @@ pub enum Middleware {
     LegacyServerScript,
     RunContextServerScript,
     RunContextClientScript,
+    AuroraScript,
     Project,
     Rbxm,
     Rbxmx,
@@ -248,6 +262,7 @@ impl Middleware {
             Self::RunContextServerScript => {
                 snapshot_lua(context, vfs, path, name, ScriptType::RunContextServer)
             }
+            Self::AuroraScript => snapshot_lua(context, vfs, path, name, ScriptType::Aurora),
             Self::Project => snapshot_project(context, vfs, path, name),
             Self::Rbxm => snapshot_rbxm(context, vfs, path, name),
             Self::Rbxmx => snapshot_rbxmx(context, vfs, path, name),
@@ -310,6 +325,8 @@ pub fn default_sync_rules() -> &'static [SyncRule] {
             sync_rule!("*.client.luau", ClientScript, ".client.luau"),
             sync_rule!("*.plugin.lua", PluginScript, ".plugin.lua"),
             sync_rule!("*.plugin.luau", PluginScript, ".plugin.luau"),
+            sync_rule!("*.aurora.lua", AuroraScript, ".aurora.lua"),
+            sync_rule!("*.aurora.luau", AuroraScript, ".aurora.luau"),
             sync_rule!("*.{lua,luau}", ModuleScript),
             sync_rule!("*.project.json", Project, ".project.json"),
             sync_rule!("*.model.json", JsonModel, ".model.json"),

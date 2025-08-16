@@ -20,6 +20,7 @@ pub enum ScriptType {
     LegacyClient,
     RunContextServer,
     RunContextClient,
+    Aurora,
 }
 
 /// Core routine for turning Lua files into snapshots.
@@ -57,6 +58,7 @@ pub fn snapshot_lua(
         ScriptType::LegacyClient => ("LocalScript", None),
         ScriptType::RunContextServer => ("Script", run_context_enums.get("Server")),
         ScriptType::RunContextClient => ("Script", run_context_enums.get("Client")),
+        ScriptType::Aurora => ("AuroraScript", None),
     };
 
     let contents = vfs.read_to_string_lf_normalized(path)?;
